@@ -49,18 +49,6 @@
         .button:hover {
             background-color: darkred;
         }
-        .player-list {
-            text-align: left;
-            background-color: #111;
-            padding: 10px;
-            border: 2px solid red;
-            margin-bottom: 20px;
-            overflow-y: auto;
-            max-height: 200px;
-        }
-        .input-section {
-            margin-bottom: 20px;
-        }
         .points-display {
             position: fixed;
             font-size: 1.2em;
@@ -69,7 +57,9 @@
             padding: 20px;
             border: 2px solid red;
             border-radius: 10px;
-            width: 200px;
+            width: 300px;
+            max-height: 300px;
+            overflow-y: auto;
         }
         .points-top-left {
             top: 10px;
@@ -87,24 +77,36 @@
             bottom: 10px;
             right: 10px;
         }
+        .team-header {
+            font-size: 1.5em;
+            color: red;
+            margin-bottom: 10px;
+        }
+        .player-points {
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="points-display points-top-left" id="team-1">
-        <h3>Team 1</h3>
-        <div id="team-1-points">Punkte: 0</div>
+        <div class="team-header" id="team-1-name">Ozans Freunde</div>
+        <div id="team-1-points">Gesamtpunkte: 0</div>
+        <div id="team-1-players" class="player-points"></div>
     </div>
     <div class="points-display points-top-right" id="team-2">
-        <h3>Team 2</h3>
-        <div id="team-2-points">Punkte: 0</div>
+        <div class="team-header" id="team-2-name">Ozans Clique</div>
+        <div id="team-2-points">Gesamtpunkte: 0</div>
+        <div id="team-2-players" class="player-points"></div>
     </div>
     <div class="points-display points-bottom-left" id="team-3">
-        <h3>Team 3</h3>
-        <div id="team-3-points">Punkte: 0</div>
+        <div class="team-header" id="team-3-name">Ozans Mannschaft</div>
+        <div id="team-3-points">Gesamtpunkte: 0</div>
+        <div id="team-3-players" class="player-points"></div>
     </div>
     <div class="points-display points-bottom-right" id="team-4">
-        <h3>Team 4</h3>
-        <div id="team-4-points">Punkte: 0</div>
+        <div class="team-header" id="team-4-name">Ozans Team</div>
+        <div id="team-4-points">Gesamtpunkte: 0</div>
+        <div id="team-4-players" class="player-points"></div>
     </div>
 
     <div class="container">
@@ -132,7 +134,7 @@
     </div>
 
     <div class="container" id="category-selection" style="display: none;">
-        <h2>Kategorie auswählen</h2>
+        <h2 id="category-header">Wählen Sie eine Kategorie aus</h2>
         <div id="categories">
             <button class="button" data-category="Quiz">Quiz</button>
             <button class="button" data-category="Aufgabe">Aufgabe</button>
@@ -154,34 +156,6 @@
     </div>
 
     <script>
-        // Intro Text
-        const introText = [
-            "Es sind fast 1500 Tage vergangen, seit unsere Reise begann.",
-            "Seitdem haben wir die Wüsten Dubais unsicher gemacht, die Strände der Türkei erobert...",
-            "Heute, an Silvester, stoßen wir nicht nur auf das neue Jahr an, sondern auf uns.",
-            "Auf Freundschaft, Geschichten und darauf, dass das Glas nie leer wird!"
-        ];
-
-        const introDiv = document.getElementById('intro');
-        let index = 0;
-
-        function showNextLine() {
-            if (index < introText.length) {
-                introDiv.innerHTML += `<p>${introText[index]}</p>`;
-                index++;
-                setTimeout(showNextLine, 2000);
-            }
-        }
-
-        showNextLine();
-
-        // Weiter Button
-        document.getElementById('weiter-button').addEventListener('click', () => {
-            document.querySelector('.container').style.display = 'none';
-            document.getElementById('team-selection').style.display = 'block';
-        });
-
-        // Team Selection Logic
         const players = [];
         const teams = [];
         const playerPoints = {};
@@ -192,41 +166,21 @@
             "Ozans Team": 0
         };
 
-        const teamElements = {
+        let currentPlayerIndex = 0;
+
+        const teamPlayerElements = {
+            "Ozans Freunde": document.getElementById('team-1-players'),
+            "Ozans Clique": document.getElementById('team-2-players'),
+            "Ozans Mannschaft": document.getElementById('team-3-players'),
+            "Ozans Team": document.getElementById('team-4-players')
+        };
+
+        const teamPointElements = {
             "Ozans Freunde": document.getElementById('team-1-points'),
             "Ozans Clique": document.getElementById('team-2-points'),
             "Ozans Mannschaft": document.getElementById('team-3-points'),
             "Ozans Team": document.getElementById('team-4-points')
         };
-
-        const questionsByCategory = {
-            Quiz: [],
-            Aufgabe: [],
-            Duell: [],
-            "Team Challenge": []
-        };
-
-        let currentCategory = null;
-        let currentPlayerIndex = 0;
-
-        async function loadQuestions() {
-            try {
-                const response = await fetch('Trinkspiel_Silvester.txt');
-                const data = await response.text();
-                const lines = data.split('\n');
-
-                lines.forEach(line => {
-                    const [category, text, answer, points] = line.split(';').map(item => item.trim());
-                    if (questionsByCategory[category]) {
-                        questionsByCategory[category].push({ text, answer, points: parseInt(points) });
-                    }
-                });
-            } catch (error) {
-                console.error('Fehler beim Laden der Fragen:', error);
-            }
-        }
-
-        loadQuestions();
 
         document.getElementById('add-player').addEventListener('click', () => {
             const playerName = document.getElementById('player-name').value.trim();
@@ -234,10 +188,14 @@
 
             if (playerName) {
                 players.push(playerName);
+                teams.push(team);
                 playerPoints[playerName] = 0;
 
                 const playerListDiv = document.getElementById('player-list');
                 playerListDiv.innerHTML += `<p>${playerName} - ${team}</p>`;
+
+                const teamPlayersDiv = teamPlayerElements[team];
+                teamPlayersDiv.innerHTML += `<p>${playerName}: 0 Punkte</p>`;
 
                 document.getElementById('player-name').value = '';
                 updatePointsDisplay();
@@ -252,67 +210,36 @@
             } else {
                 document.getElementById('team-selection').style.display = 'none';
                 document.getElementById('category-selection').style.display = 'block';
-                updatePointsDisplay();
+                updateCategoryHeader();
             }
         });
 
         document.querySelectorAll('[data-category]').forEach(button => {
             button.addEventListener('click', (e) => {
-                currentCategory = e.target.getAttribute('data-category');
+                const category = e.target.getAttribute('data-category');
                 document.getElementById('category-selection').style.display = 'none';
                 document.getElementById('game-area').style.display = 'block';
                 document.getElementById('current-player').textContent = `Spieler: ${players[currentPlayerIndex]}`;
-                loadQuestion();
             });
         });
+
+        function updateCategoryHeader() {
+            const currentPlayer = players[currentPlayerIndex];
+            document.getElementById('category-header').textContent = `Wählen Sie eine Kategorie aus (Spieler: ${currentPlayer})`;
+        }
 
         function updatePointsDisplay() {
             Object.entries(teamPoints).forEach(([team, points]) => {
-                teamElements[team].textContent = `Punkte: ${points}`;
+                teamPointElements[team].textContent = `Gesamtpunkte: ${points}`;
+
+                const teamPlayersDiv = teamPlayerElements[team];
+                teamPlayersDiv.innerHTML = '';
+                players.forEach((player, index) => {
+                    if (teams[index] === team) {
+                        teamPlayersDiv.innerHTML += `<p>${player}: ${playerPoints[player]} Punkte</p>`;
+                    }
+                });
             });
-        }
-
-        function loadQuestion() {
-            const questionText = document.getElementById('question-text');
-            const questions = questionsByCategory[currentCategory];
-            const currentQuestion = questions[Math.floor(Math.random() * questions.length)];
-            questionText.textContent = currentQuestion.text;
-            questionText.dataset.answer = currentQuestion.answer;
-            questionText.dataset.points = currentQuestion.points;
-        }
-
-        document.getElementById('correct-button').addEventListener('click', () => {
-            const currentPlayer = players[currentPlayerIndex];
-            const points = parseInt(document.getElementById('question-text').dataset.points);
-            const team = document.getElementById('team').value;
-
-            playerPoints[currentPlayer] += points;
-            teamPoints[team] += points;
-            alert(`${currentPlayer} hat ${points} Punkte gewonnen!`);
-            nextPlayer();
-        });
-
-        document.getElementById('wrong-button').addEventListener('click', () => {
-            const currentPlayer = players[currentPlayerIndex];
-            const points = parseInt(document.getElementById('question-text').dataset.points);
-            const team = document.getElementById('team').value;
-
-            playerPoints[currentPlayer] -= points;
-            teamPoints[team] -= points;
-            alert(`${currentPlayer} hat ${points} Punkte verloren!`);
-            nextPlayer();
-        });
-
-        document.getElementById('show-answer').addEventListener('click', () => {
-            const answer = document.getElementById('question-text').dataset.answer;
-            alert(`Antwort: ${answer}`);
-        });
-
-        function nextPlayer() {
-            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-            document.getElementById('game-area').style.display = 'none';
-            document.getElementById('category-selection').style.display = 'block';
-            updatePointsDisplay();
         }
     </script>
 </body>
