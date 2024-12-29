@@ -292,25 +292,42 @@
             updateCategoryHeader();
         }
 
-        // Example questions for testing
-        questions = {
-            "Quiz": [
-                { text: "Wie viele Tage hat ein Schaltjahr?", points: 10 },
-                { text: "Was ist die Hauptstadt von Frankreich?", points: 10 }
-            ],
-            "Aufgabe": [
-                { text: "Tanzt 30 Sekunden lang wie ein Roboter.", points: 5 },
-                { text: "Erzähle einen Witz, der alle zum Lachen bringt.", points: 5 }
-            ],
-            "Duell": [
-                { text: "Armdrücken gegen einen Spieler deiner Wahl.", points: 15 },
-                { text: "Wettessen: Wer isst am schnellsten einen Keks?", points: 15 }
-            ],
-            "Team Challenge": [
-                { text: "Alle Teammitglieder singen zusammen ein Lied.", points: 20 },
-                { text: "Baut eine menschliche Pyramide.", points: 20 }
-            ]
-        };
-    </script>
-</body>
-</html>
+       // Fragen initialisieren
+let questions = {
+    "Quiz": [],
+    "Aufgabe": [],
+    "Duell": [],
+    "Team Challenge": []
+};
+
+// Funktion zum Laden der Fragen aus der Textdatei
+function loadQuestions() {
+    fetch('Trinkspiel_Silvester.txt')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Fehler beim Laden der Fragen');
+            }
+            return response.text();
+        })
+        .then(data => {
+            const lines = data.split('\n'); // Jede Zeile wird separat betrachtet
+            lines.forEach(line => {
+                const [category, text, answer, points] = line.split(';');
+                if (category && text && points) {
+                    questions[category.trim()].push({
+                        text: text.trim(),
+                        answer: answer ? answer.trim() : 'N/A',
+                        points: parseInt(points.trim(), 10)
+                    });
+                }
+            });
+            console.log('Fragen erfolgreich geladen:', questions);
+        })
+        .catch(error => {
+            console.error('Fehler beim Laden der Fragen:', error);
+        });
+}
+
+// Aufruf der Funktion direkt nach dem Laden der Seite
+loadQuestions();
+
