@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silvester Trinkspiel</title>
+    <style>
+        body {
+            font-family: 'Sans-Serif', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #333, #000);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 3em;
+            color: red;
+            margin-bottom: 20px;
+        }
+        .scrolling-text {
+            background-color: #000;
+            color: lightgray;
+            font-size: 1.2em;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 300px;
+            border: 2px solid red;
+        }
+        .button {
+            font-size: 1.5em;
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: red;
+            color: black;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: darkred;
+        }
+        .points-display {
+            position: fixed;
+            font-size: 1.2em;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px;
+            border: 2px solid red;
+            border-radius: 10px;
+            width: 300px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .points-top-left {
+            top: 10px;
+            left: 10px;
+        }
+        .points-top-right {
+            top: 10px;
+            right: 10px;
+        }
+        .points-bottom-left {
+            bottom: 10px;
+            left: 10px;
+        }
+        .points-bottom-right {
+            bottom: 10px;
+            right: 10px;
+        }
+        .team-header {
+            font-size: 1.5em;
+            color: red;
+            margin-bottom: 10px;
+        }
+        .player-points {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="intro-page">
+        <h1>Silvester 2024/2025</h1>
+        <div id="intro" class="scrolling-text">
+            Es sind fast 1500 Tage vergangen, seit unsere Reise begann.<br>
+            Seitdem haben wir die Wüsten Dubais unsicher gemacht, die Strände der Türkei erobert,<br>
+            durch die Grachten Amsterdams geschippert – und das alles meistens mit einem Glas in der Hand und mit 1,8 Promille.<br><br>
+            Wir haben viel gelacht, noch mehr getrunken und so manche Nacht unvergesslich gemacht.<br>
+            Heute, an Silvester, stoßen wir nicht nur auf das neue Jahr an, sondern auf uns –<br>
+            auf Freundschaft, Geschichten und darauf, dass das Glas nie leer wird!
+        </div>
+        <button class="button" id="intro-weiter">Weiter</button>
+    </div>
+
+    <div class="container" id="team-selection" style="display: none;">
+        <h2>Teams erstellen</h2>
+        <div class="input-section">
+            <label for="player-name">Spielername:</label>
+            <input type="text" id="player-name">
+            <label for="team">Team:</label>
+            <select id="team">
+                <option value="Ozans Freunde">Ozans Freunde</option>
+                <option value="Ozans Clique">Ozans Clique</option>
+                <option value="Ozans Mannschaft">Ozans Mannschaft</option>
+                <option value="Ozans Team">Ozans Team</option>
+            </select>
+            <button class="button" id="add-player">Hinzufügen</button>
+        </div>
+        <div class="player-list" id="player-list"></div>
+        <button class="button" id="start-game">Spiel starten</button>
+    </div>
+
+    <div class="container" id="category-selection" style="display: none;">
+        <h2 id="category-header">Wählen Sie eine Kategorie aus</h2>
+        <div id="categories">
+            <button class="button" data-category="Quiz">Quiz</button>
+            <button class="button" data-category="Aufgabe">Aufgabe</button>
+            <button class="button" data-category="Duell">Duell</button>
+            <button class="button" data-category="Team Challenge">Team Challenge</button>
+        </div>
+    </div>
+
+    <div class="container" id="question-display" style="display: none;">
+        <h2 id="question-category"></h2>
+        <p id="question-text"></p>
+        <button class="button" id="correct-answer">Richtig</button>
+        <button class="button" id="wrong-answer">Falsch</button>
+    </div>
+
+    <div class="points-display points-top-left" id="points-freunde">
+        <div class="team-header">Ozans Freunde</div>
+        <div id="points-freunde-score">Gesamtpunkte: 0</div>
+        <div id="points-freunde-players"></div>
+    </div>
+
+    <div class="points-display points-top-right" id="points-clique">
+        <div class="team-header">Ozans Clique</div>
+        <div id="points-clique-score">Gesamtpunkte: 0</div>
+        <div id="points-clique-players"></div>
+    </div>
+
+    <div class="points-display points-bottom-left" id="points-mannschaft">
+        <div class="team-header">Ozans Mannschaft</div>
+        <div id="points-mannschaft-score">Gesamtpunkte: 0</div>
+        <div id="points-mannschaft-players"></div>
+    </div>
+
+    <div class="points-display points-bottom-right" id="points-team">
+        <div class="team-header">Ozans Team</div>
+        <div id="points-team-score">Gesamtpunkte: 0</div>
+        <div id="points-team-players"></div>
+    </div>
+
+    <script>
+        const players = [];
+        const teams = [];
+        const playerPoints = {};
+        const teamPoints = {
+            "Ozans Freunde": 0,
+            "Ozans Clique": 0,
+            "Ozans Mannschaft": 0,
+            "Ozans Team": 0
+        };
+
+        let currentPlayerIndex = 0;
+        let questions = {
+            "Quiz": [],
+            "Aufgabe": [],
+            "Duell": [],
+            "Team Challenge": []
+        };
+
+        document.getElementById('intro-weiter').addEventListener('click', () => {
+            document.getElementById('intro-page').style.display = 'none';
+            document.getElementById('team-selection').style.display = 'block';
+        });
+
+        document.getElementById('add-player').addEventListener('click', () => {
+            const playerName = document.getElementById('player-name').value.trim();
+            const team = document.getElementById('team').value;
+
+            if (playerName) {
+                players.push(playerName);
+                teams.push(team);
+                playerPoints[playerName] = 0;
+
+                const playerListDiv = document.getElementById('player-list');
+                playerListDiv.innerHTML += `<p>${playerName} - ${team}</p>`;
+
+                document.getElementById('player-name').value = '';
+                updatePointsDisplay();
+            } else {
+                alert('Bitte geben Sie einen Spielernamen ein.');
+            }
+        });
+
+        document.getElementById('start-game').addEventListener('click', () => {
+            if (players.length === 0) {
+                alert('Bitte fügen Sie mindestens einen Spieler hinzu.');
+            } else {
+                document.getElementById('team-selection').style.display = 'none';
+                document.getElementById('category-selection').style.display = 'block';
+                updateCategoryHeader();
+                updatePointsDisplay();
+            }
+        });
+
+        document.querySelectorAll('[data-category]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const category = e.target.getAttribute('data-category');
+                showQuestion(category);
+            });
+        });
+
+        document.getElementById('correct-answer').addEventListener('click', () => {
+            handleAnswer(true);
+        });
+
+        document.getElementById('wrong-answer').addEventListener('click', () => {
+            handleAnswer(false);
+        });
+
+        function updateCategoryHeader() {
+            const currentPlayer = players[currentPlayerIndex];
+            document.getElementById('category-header').textContent = `Wählen Sie eine Kategorie aus (Spieler: ${currentPlayer})`;
+        }
+
+        function updatePointsDisplay() {
+            const teamsWithPlayers = {
+                "Ozans Freunde": [],
+                "Ozans Clique": [],
+                "Ozans Mannschaft": [],
+                "Ozans Team": []
+            };
+
+            players.forEach((player, index) => {
+                teamsWithPlayers[teams[index]].push(`${player}: ${playerPoints[player]} Punkte`);
+            });
+
+            document.getElementById('points-freunde-score').textContent = `Gesamtpunkte: ${teamPoints["Ozans Freunde"]}`;
+            document.getElementById('points-freunde-players').innerHTML = teamsWithPlayers["Ozans Freunde"].join('<br>');
+
+            document.getElementById('points-clique-score').textContent = `Gesamtpunkte: ${teamPoints["Ozans Clique"]}`;
+            document.getElementById('points-clique-players').innerHTML = teamsWithPlayers["Ozans Clique"].join('<br>');
+
+            document.getElementById('points-mannschaft-score').textContent = `Gesamtpunkte: ${teamPoints["Ozans Mannschaft"]}`;
+            document.getElementById('points-mannschaft-players').innerHTML = teamsWithPlayers["Ozans Mannschaft"].join('<br>');
+
+            document.getElementById('points-team-score').textContent = `Gesamtpunkte: ${teamPoints["Ozans Team"]}`;
+            document.getElementById('points-team-players').innerHTML = teamsWithPlayers["Ozans Team"].join('<br>');
+        }
+
+        function showQuestion(category) {
+            document.getElementById('category-selection').style.display = 'none';
+            document.getElementById('question-display').style.display = 'block';
+
+            const question = questions[category].shift();
+            if (question) {
+                document.getElementById('question-category').textContent = category;
+                document.getElementById('question-text').textContent = question.text;
+                document.getElementById('question-display').dataset.points = question.points;
+            } else {
+                alert('Keine Fragen mehr in dieser Kategorie.');
+                document.getElementById('question-display').style.display = 'none';
+                document.getElementById('category-selection').style.display = 'block';
+                updateCategoryHeader();
+            }
+        }
+
+        function handleAnswer(isCorrect) {
+            const points = parseInt(document.getElementById('question-display').dataset.points, 10) * (isCorrect ? 1 : -1);
+            const currentPlayer = players[currentPlayerIndex];
+            const team = teams[currentPlayerIndex];
+
+            playerPoints[currentPlayer] += points;
+            teamPoints[team] += points;
+
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            updatePointsDisplay();
+
+            document.getElementById('question-display').style.display = 'none';
+            document.getElementById('category-selection').style.display = 'block';
+            updateCategoryHeader();
+        }
+
+        async function loadQuestions() {
+            try {
+                const response = await fetch('Trinkspiel_Silvester.txt');
+                const text = await response.text();
+                const lines = text.split('\n');
+
+                lines.forEach(line => {
+                    const [category, text, answer, points] = line.split(';').map(item => item.trim());
+                    if (category && text && points) {
+                        questions[category].push({ text, points: parseInt(points, 10) });
+                    }
+                });
+            } catch (error) {
+                console.error('Fehler beim Laden der Fragen:', error);
+            }
+        }
+
+        loadQuestions();
+    </script>
+</body>
+</html>
