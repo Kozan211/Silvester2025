@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silvester Trinkspiel</title>
+    <style>
+        body {
+            font-family: 'Sans-Serif', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #333, #000);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 3em;
+            color: red;
+            margin-bottom: 20px;
+        }
+        .scrolling-text {
+            background-color: #000;
+            color: lightgray;
+            font-size: 1.2em;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 300px;
+            border: 2px solid red;
+        }
+        .button {
+            font-size: 1.5em;
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: red;
+            color: black;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: darkred;
+        }
+        .player-list {
+            text-align: left;
+            background-color: #111;
+            padding: 10px;
+            border: 2px solid red;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 200px;
+        }
+        .input-section {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Silvester 2024/2025</h1>
+        <div id="intro" class="scrolling-text"></div>
+        <button class="button" id="weiter-button">Weiter</button>
+    </div>
+
+    <div class="container" id="team-selection" style="display: none;">
+        <h2>Teams erstellen</h2>
+        <div class="input-section">
+            <label for="player-name">Spielername:</label>
+            <input type="text" id="player-name">
+            <label for="team">Team:</label>
+            <select id="team">
+                <option value="Ozans Freunde">Ozans Freunde</option>
+                <option value="Ozans Clique">Ozans Clique</option>
+                <option value="Ozans Mannschaft">Ozans Mannschaft</option>
+                <option value="Ozans Team">Ozans Team</option>
+            </select>
+            <button class="button" id="add-player">Hinzufügen</button>
+        </div>
+        <div class="player-list" id="player-list"></div>
+        <button class="button" id="start-game">Spiel starten</button>
+    </div>
+
+    <div class="container" id="category-selection" style="display: none;">
+        <h2>Kategorie auswählen</h2>
+        <div id="categories">
+            <button class="button" data-category="Quiz">Quiz</button>
+            <button class="button" data-category="Aufgabe">Aufgabe</button>
+            <button class="button" data-category="Duell">Duell</button>
+        </div>
+    </div>
+
+    <div class="container" id="game-area" style="display: none;">
+        <h2>Spielbereich</h2>
+        <div id="points-overview" class="player-list"></div>
+        <div id="question-area">
+            <h3 id="question-text"></h3>
+            <div>
+                <button class="button" id="correct-button">Richtig (+10 Punkte)</button>
+                <button class="button" id="wrong-button">Falsch (-5 Punkte)</button>
+                <button class="button" id="show-answer">Antwort anzeigen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Intro Text
+        const introText = [
+            "Es sind fast 1500 Tage vergangen, seit unsere Reise begann.",
+            "Seitdem haben wir die Wüsten Dubais unsicher gemacht, die Strände der Türkei erobert...",
+            "Heute, an Silvester, stoßen wir nicht nur auf das neue Jahr an, sondern auf uns.",
+            "Auf Freundschaft, Geschichten und darauf, dass das Glas nie leer wird!"
+        ];
+
+        const introDiv = document.getElementById('intro');
+        let index = 0;
+
+        function showNextLine() {
+            if (index < introText.length) {
+                introDiv.innerHTML += `<p>${introText[index]}</p>`;
+                index++;
+                setTimeout(showNextLine, 2000);
+            }
+        }
+
+        showNextLine();
+
+        // Weiter Button
+        document.getElementById('weiter-button').addEventListener('click', () => {
+            document.querySelector('.container').style.display = 'none';
+            document.getElementById('team-selection').style.display = 'block';
+        });
+
+        // Team Selection Logic
+        const players = [];
+        const teams = [];
+        const playerPoints = {};
+        const questionsByCategory = {
+            Quiz: [],
+            Aufgabe: [],
+            Duell: []
+        };
+
+        let currentCategory = null;
+        let currentQuestionIndex = 0;
+
+        async function loadQuestions() {
+            try {
+                const response = await fetch('Trinkspiel_Silvester.txt');
+                const data = await response.text();
+                const lines = data.split('\n');
+
+                lines.forEach(line => {
+                    const [category, text, answer] = line.split(';').map(item => item.trim());
+                    if (questionsByCategory[category]) {
+                        questionsByCategory[category].push({ text, answer });
+                    }
+                });
+            } catch (error) {
+                console.error('Fehler beim Laden der Fragen:', error);
+            }
+        }
+
+        loadQuestions();
+
+        document.getElementById('add-player').addEventListener('click', () => {
+            const playerName = document.getElementById('player-name').value.trim();
+            const team = document.getElementById('team').value;
+
+            if (playerName) {
+                players.push(playerName);
+                teams.push(team);
+                playerPoints[playerName] = 0;
+
+                const playerListDiv = document.getElementById('player-list');
+                playerListDiv.innerHTML += `<p>${playerName} - ${team}</p>`;
+
+                document.getElementById('player-name').value = '';
+            } else {
+                alert('Bitte geben Sie einen Spielernamen ein.');
+            }
+        });
+
+        document.getElementById('start-game').addEventListener('click', () => {
+            if (players.length === 0) {
+                alert('Bitte fügen Sie mindestens einen Spieler hinzu.');
+            } else {
+                document.getElementById('team-selection').style.display = 'none';
+                document.getElementById('category-selection').style.display = 'block';
+            }
+        });
+
+        document.querySelectorAll('[data-category]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                currentCategory = e.target.getAttribute('data-category');
+                document.getElementById('category-selection').style.display = 'none';
+                document.getElementById('game-area').style.display = 'block';
+                loadQuestion();
+            });
+        });
+
+        function updatePointsOverview() {
+            const pointsOverviewDiv = document.getElementById('points-overview');
+            pointsOverviewDiv.innerHTML = '<h3>Punktestand:</h3>';
+            players.forEach(player => {
+                pointsOverviewDiv.innerHTML += `<p>${player}: ${playerPoints[player]} Punkte</p>`;
+            });
+        }
+
+        function loadQuestion() {
+            const questionText = document.getElementById('question-text');
+            const questions = questionsByCategory[currentCategory];
+            const currentQuestion = questions[currentQuestionIndex];
+            questionText.textContent = currentQuestion.text;
+        }
+
+        document.getElementById('correct-button').addEventListener('click', () => {
+            const currentPlayer = players[currentPlayerIndex];
+            playerPoints[currentPlayer] += 10;
+            alert(`${currentPlayer} hat 10 Punkte gewonnen!`);
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            nextQuestion();
+        });
+
+        document.getElementById('wrong-button').addEventListener('click', () => {
+            const currentPlayer = players[currentPlayerIndex];
+            playerPoints[currentPlayer] -= 5;
+            alert(`${currentPlayer} hat 5 Punkte verloren!`);
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            nextQuestion();
+        });
+
+        document.getElementById('show-answer').addEventListener('click', () => {
+            const questions = questionsByCategory[currentCategory];
+            const currentQuestion = questions[currentQuestionIndex];
+            alert(`Antwort: ${currentQuestion.answer}`);
+        });
+
+        function nextQuestion() {
+            const questions = questionsByCategory[currentCategory];
+            currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
+            updatePointsOverview();
+            loadQuestion();
+        }
+    </script>
+</body>
+</html>
